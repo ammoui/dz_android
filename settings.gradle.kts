@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "android_dz_manychkin"
+rootProject.name = "android_dz_manychkin_2"
 include(":app")
  
