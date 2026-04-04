@@ -1,4 +1,4 @@
-package com.example.android_dz_manychkin
+package com.example.android_dz_manychkin_2
 
 import org.junit.Test
 

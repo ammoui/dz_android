@@ -1,4 +1,4 @@
-package com.example.android_dz_manychkin.ui.theme
+package com.example.android_dz_manychkin_2.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
