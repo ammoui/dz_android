@@ -20,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,15 +30,10 @@ import com.example.android_dz_manychkin_3.model.MediaType
 fun MediaDetailScreen(
     uiState: MediaDetailUiState,
     mediaType: MediaType,
-    mediaId: Int,
     onBackClick: () -> Unit,
     onRetry: () -> Unit,
-    onFirstLoad: () -> Unit,
+    onToggleFavourite: () -> Unit,
 ) {
-    LaunchedEffect(mediaType, mediaId) {
-        onFirstLoad()
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,8 +46,8 @@ fun MediaDetailScreen(
             )
         }
     ) { innerPadding ->
-        when {
-            uiState.isLoading -> {
+        when (uiState) {
+            MediaDetailUiState.Loading -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -67,7 +61,7 @@ fun MediaDetailScreen(
                 }
             }
 
-            uiState.errorMessage != null -> {
+            is MediaDetailUiState.Error -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -77,7 +71,7 @@ fun MediaDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = uiState.errorMessage,
+                        text = uiState.message,
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -87,21 +81,8 @@ fun MediaDetailScreen(
                 }
             }
 
-            uiState.detail == null -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text("No data")
-                }
-            }
-
-            else -> {
+            is MediaDetailUiState.Content -> {
                 val detail = uiState.detail
-
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -120,6 +101,12 @@ fun MediaDetailScreen(
                             text = "${detail.format} • ${detail.year} • ${detail.score}",
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedButton(onClick = onToggleFavourite) {
+                                Text(
+                                    text = if (uiState.isFavourite) "Remove from favourites" else "Add to favourites",
+                                )
+                            }
                     }
 
                     item {

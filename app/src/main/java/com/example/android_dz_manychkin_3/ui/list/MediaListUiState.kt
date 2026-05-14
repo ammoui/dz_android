@@ -7,6 +7,8 @@ data class MediaListUiState(
     val query: String = "",
     val mediaType: MediaType = MediaType.ANIME,
     val items: List<MediaListItem> = emptyList(),
+    val favouriteItems: List<MediaListItem> = emptyList(),
+    val favouriteIds: Set<Int> = emptySet(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )

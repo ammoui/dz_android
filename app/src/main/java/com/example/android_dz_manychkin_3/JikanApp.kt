@@ -1,12 +1,22 @@
 package com.example.android_dz_manychkin_3
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.example.android_dz_manychkin_3.model.MediaType
 import com.example.android_dz_manychkin_3.ui.detail.MediaDetailScreen
 import com.example.android_dz_manychkin_3.ui.detail.MediaDetailViewModel
@@ -27,7 +37,7 @@ fun JikanApp() {
         startDestination = LIST_ROUTE,
     ) {
         composable(LIST_ROUTE) {
-            val viewModel: MediaListViewModel = viewModel()
+            val viewModel: MediaListViewModel = hiltViewModel()
 
             MediaListScreen(
                 uiState = viewModel.uiState,
@@ -45,20 +55,42 @@ fun JikanApp() {
                 navArgument(DETAIL_ID_ARGUMENT) { type = NavType.IntType },
             )
         ) { backStackEntry ->
-            val mediaType = MediaType.fromRouteValue(
-                backStackEntry.arguments?.getString(DETAIL_MEDIA_TYPE_ARGUMENT)
-            )
-            val id = backStackEntry.arguments?.getInt(DETAIL_ID_ARGUMENT) ?: 0
-            val viewModel: MediaDetailViewModel = viewModel()
+            val mediaTypeArg = backStackEntry.arguments?.getString(DETAIL_MEDIA_TYPE_ARGUMENT)
+            val mediaId = backStackEntry.arguments?.getInt(DETAIL_ID_ARGUMENT)
+            val mediaType = MediaType.fromRouteValueOrNull(mediaTypeArg)
 
-            MediaDetailScreen(
-                uiState = viewModel.uiState,
-                mediaType = mediaType,
-                mediaId = id,
-                onBackClick = { navController.popBackStack() },
-                onRetry = { viewModel.load(mediaType, id) },
-                onFirstLoad = { viewModel.load(mediaType, id) }
-            )
+            if (mediaType == null || mediaId == null) {
+                MissingArgumentsScreen(onBackClick = { navController.popBackStack() })
+            } else {
+                val viewModel: MediaDetailViewModel = hiltViewModel(backStackEntry)
+
+                MediaDetailScreen(
+                    uiState = viewModel.uiState,
+                    mediaType = mediaType,
+                    onBackClick = { navController.popBackStack() },
+                    onRetry = { viewModel.retry() },
+                    onToggleFavourite = { viewModel.toggleFavourite() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MissingArgumentsScreen(onBackClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "Ошибка аргументов навигации",
+            style = MaterialTheme.typography.titleMedium,
+        )
+        OutlinedButton(onClick = onBackClick, modifier = Modifier.padding(top = 12.dp)) {
+            Text("Back")
         }
     }
 }

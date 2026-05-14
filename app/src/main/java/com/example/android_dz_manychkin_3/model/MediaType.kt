@@ -5,8 +5,8 @@ enum class MediaType(val routeValue: String, val label: String) {
     MANGA("manga", "Manga");
 
     companion object {
-        fun fromRouteValue(value: String?): MediaType {
-            return entries.firstOrNull { it.routeValue == value } ?: ANIME
+        fun fromRouteValueOrNull(value: String?): MediaType? {
+            return entries.firstOrNull { it.routeValue == value }
         }
     }
 }
