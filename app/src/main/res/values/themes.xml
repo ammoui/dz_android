@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.Android_dz_manychkin_3" parent="Theme.Material3.DayNight">
+        <!-- Keep minimal: Compose defines UI theme. -->
+    </style>
+</resources>
