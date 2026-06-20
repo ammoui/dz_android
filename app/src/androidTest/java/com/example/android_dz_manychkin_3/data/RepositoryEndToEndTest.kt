@@ -32,7 +32,7 @@ class RepositoryEndToEndTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         dao = db.favouriteDao()
         api = mockk()
-        repository = JikanRepository(api, dao)
+        repository = JikanRepository(api, dao, kotlinx.coroutines.test.StandardTestDispatcher())
     }
 
     @After
@@ -138,8 +138,20 @@ class RepositoryEndToEndTest {
         assertThat(flowItems).hasSize(1)
         assertThat(flowItems[0].score).isEqualTo("8.5")
         
-        // Update through DAO
-        dao.upsert(entity.copy(score = "9.0"))
+        val detail = MediaDetail(
+            id = 1,
+            mediaType = MediaType.ANIME,
+            title = "Anime",
+            format = "TV",
+            year = "2024",
+            score = "9.0",
+            status = "Finished",
+            length = "24 min",
+            synopsis = "Synopsis"
+        )
+        
+        // Update through Repository
+        repository.setFavourite(detail, true)
         
         // Flow should emit updated data
         flowItems = repository.observeFavourites(MediaType.ANIME).first()

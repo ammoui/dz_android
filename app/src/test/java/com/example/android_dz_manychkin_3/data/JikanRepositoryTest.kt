@@ -33,7 +33,7 @@ class JikanRepositoryTest {
         Dispatchers.setMain(testDispatcher)
         api = mockk()
         dao = mockk(relaxed = true)
-        repository = JikanRepository(api, dao)
+        repository = JikanRepository(api, dao, testDispatcher)
     }
 
     @After

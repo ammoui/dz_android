@@ -26,8 +26,6 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -43,8 +41,6 @@ fun MediaListScreen(
     onEvent: (MediaListEvent) -> Unit,
     onOpenDetail: (MediaType, Int) -> Unit,
 ) {
-    val focusRequester = FocusRequester()
-
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Jikan Explorer") })
@@ -60,8 +56,7 @@ fun MediaListScreen(
                 value = uiState.query,
                 onValueChange = { onEvent(MediaListEvent.QueryChanged(it)) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                    .fillMaxWidth(),
                 label = { Text("Search anime or manga") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),

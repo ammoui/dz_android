@@ -33,7 +33,7 @@ class JikanRepositoryFlowTest {
         Dispatchers.setMain(testDispatcher)
         api = mockk()
         dao = mockk(relaxed = true)
-        repository = JikanRepository(api, dao)
+        repository = JikanRepository(api, dao, testDispatcher)
     }
 
     @After
@@ -92,21 +92,22 @@ class JikanRepositoryFlowTest {
 
     @Test
     fun `observeIsFavourite does not emit duplicate identical values`() = runTest {
-        val existsFlow = MutableStateFlow(0)
+        val existsFlow = kotlinx.coroutines.flow.MutableSharedFlow<Int>()
         every { dao.observeIsFavourite("anime-1") } returns existsFlow
 
         repository.observeIsFavourite(MediaType.ANIME, 1).test {
             // First emission
+            existsFlow.emit(0)
             assertThat(awaitItem()).isFalse()
 
             // Emit the same underlying value
-            existsFlow.value = 0
+            existsFlow.emit(0)
             
             // Should not emit anything new, so we expect no events
             expectNoEvents()
 
             // Now emit a different value to prove it still works
-            existsFlow.value = 1
+            existsFlow.emit(1)
             assertThat(awaitItem()).isTrue()
 
             cancelAndIgnoreRemainingEvents()

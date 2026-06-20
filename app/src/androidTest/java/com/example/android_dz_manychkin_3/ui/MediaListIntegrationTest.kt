@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import com.example.android_dz_manychkin_3.data.JikanRepository
 import com.example.android_dz_manychkin_3.model.MediaListItem
 import com.example.android_dz_manychkin_3.model.MediaType
@@ -59,6 +60,9 @@ class MediaListIntegrationTest {
         }
 
         // Verify error is displayed
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText("Проблема с интернетом", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithText("Проблема с интернетом", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
 
@@ -74,6 +78,9 @@ class MediaListIntegrationTest {
 
 
         // Step 4: Verify success state is displayed
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText("Naruto", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithText("Naruto").assertIsDisplayed()
         
         // Verify repository was called twice

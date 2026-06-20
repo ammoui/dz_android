@@ -41,7 +41,7 @@ class FavouriteToggleBehaviorTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         dao = db.favouriteDao()
         api = mockk(relaxed = true)
-        repository = JikanRepository(api, dao)
+        repository = JikanRepository(api, dao, kotlinx.coroutines.test.StandardTestDispatcher())
     }
 
     @After
@@ -54,35 +54,35 @@ class FavouriteToggleBehaviorTest {
         repository.setFavourite(testDetail, true)
         repository.setFavourite(testDetail, true)
         
-        val items = dao.observeByType("anime").first()
+        val items = repository.observeFavourites(MediaType.ANIME).first()
         
         assertThat(items).hasSize(1)
-        assertThat(items[0].mediaId).isEqualTo(1)
+        assertThat(items[0].id).isEqualTo(1)
     }
 
     @Test
     fun toggleFavouriteOnThenOffShouldRemoveItem() = runTest {
         repository.setFavourite(testDetail, true)
-        assertThat(dao.getByKey("anime-1")).isNotNull()
+        assertThat(repository.observeIsFavourite(MediaType.ANIME, 1).first()).isTrue()
         
         repository.setFavourite(testDetail, false)
         
-        assertThat(dao.getByKey("anime-1")).isNull()
+        assertThat(repository.observeIsFavourite(MediaType.ANIME, 1).first()).isFalse()
     }
 
     @Test
     fun favouriteToggleSequenceShouldPreserveDataIntegrity() = runTest {
         repository.setFavourite(testDetail, true)
-        var saved = dao.getByKey("anime-1")
-        assertThat(saved?.title).isEqualTo("Test Anime")
+        var items = repository.observeFavourites(MediaType.ANIME).first()
+        assertThat(items[0].title).isEqualTo("Test Anime")
         
         repository.setFavourite(testDetail, false)
-        assertThat(dao.getByKey("anime-1")).isNull()
+        assertThat(repository.observeIsFavourite(MediaType.ANIME, 1).first()).isFalse()
         
         repository.setFavourite(testDetail, true)
-        saved = dao.getByKey("anime-1")
-        assertThat(saved?.title).isEqualTo("Test Anime")
-        assertThat(saved?.score).isEqualTo("8.5")
+        items = repository.observeFavourites(MediaType.ANIME).first()
+        assertThat(items[0].title).isEqualTo("Test Anime")
+        assertThat(items[0].score).isEqualTo("8.5")
     }
 
     @Test
@@ -90,14 +90,14 @@ class FavouriteToggleBehaviorTest {
         val original = testDetail
         repository.setFavourite(original, true)
         
-        var saved = dao.getByKey("anime-1")
-        assertThat(saved?.score).isEqualTo("8.5")
+        var items = repository.observeFavourites(MediaType.ANIME).first()
+        assertThat(items[0].score).isEqualTo("8.5")
         
         val updated = original.copy(score = "9.0")
         repository.setFavourite(updated, true)
         
-        saved = dao.getByKey("anime-1")
-        assertThat(saved?.score).isEqualTo("9.0")
+        items = repository.observeFavourites(MediaType.ANIME).first()
+        assertThat(items[0].score).isEqualTo("9.0")
     }
 
     @Test
@@ -108,9 +108,9 @@ class FavouriteToggleBehaviorTest {
         repository.setFavourite(detail1, true)
         repository.setFavourite(detail2, true)
         
-        val items = dao.observeByType("anime").first()
+        val items = repository.observeFavourites(MediaType.ANIME).first()
         
         assertThat(items).hasSize(2)
-        assertThat(items.map { it.mediaId }).containsExactly(1, 2)
+        assertThat(items.map { it.id }).containsExactly(1, 2)
     }
 }

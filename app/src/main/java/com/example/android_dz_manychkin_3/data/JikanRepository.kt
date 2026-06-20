@@ -12,16 +12,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.io.IOException
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.example.android_dz_manychkin_3.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 
 @Singleton
 class JikanRepository @Inject constructor(
     private val api: JikanApi,
     private val favouriteDao: FavouriteDao,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
-    suspend fun loadMediaList(mediaType: MediaType, query: String): List<MediaListItem> = withContext(Dispatchers.IO) {
+    suspend fun loadMediaList(mediaType: MediaType, query: String): List<MediaListItem> = withContext(ioDispatcher) {
         val response = if (query.isBlank()) {
             when (mediaType) {
                 MediaType.ANIME -> api.getTopAnime()
@@ -37,7 +42,7 @@ class JikanRepository @Inject constructor(
         response.data.mapNotNull { it.toListItem(mediaType) }
     }
 
-    suspend fun loadMediaDetail(mediaType: MediaType, id: Int): MediaDetail = withContext(Dispatchers.IO) {
+    suspend fun loadMediaDetail(mediaType: MediaType, id: Int): MediaDetail = withContext(ioDispatcher) {
         val response = when (mediaType) {
             MediaType.ANIME -> api.getAnimeDetail(id)
             MediaType.MANGA -> api.getMangaDetail(id)
@@ -64,10 +69,11 @@ class JikanRepository @Inject constructor(
     fun observeIsFavourite(mediaType: MediaType, id: Int): Flow<Boolean> {
         return favouriteDao.observeIsFavourite(favouriteKey(mediaType, id))
             .map { exists -> exists != 0 }
+            .distinctUntilChanged()
     }
 
     suspend fun setFavourite(detail: MediaDetail, favourite: Boolean) {
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             val key = favouriteKey(detail.mediaType, detail.id)
 
             if (favourite) {
@@ -92,7 +98,7 @@ class JikanRepository @Inject constructor(
         }
     }
 
-    suspend fun loadMediaDetailOrFavourite(mediaType: MediaType, id: Int): MediaDetail? = withContext(Dispatchers.IO) {
+    suspend fun loadMediaDetailOrFavourite(mediaType: MediaType, id: Int): MediaDetail? = withContext(ioDispatcher) {
         try {
             val response = when (mediaType) {
                 MediaType.ANIME -> api.getAnimeDetail(id)
@@ -100,19 +106,24 @@ class JikanRepository @Inject constructor(
             }
             response.data.toDetail(mediaType)
         } catch (e: Exception) {
-            val favouriteKey = favouriteKey(mediaType, id)
-            favouriteDao.getByKey(favouriteKey)?.let { entity ->
-                MediaDetail(
-                    id = entity.mediaId,
-                    mediaType = mediaType,
-                    title = entity.title,
-                    format = entity.format,
-                    year = entity.year,
-                    score = entity.score,
-                    status = entity.status,
-                    length = entity.length,
-                    synopsis = entity.synopsis,
-                )
+            when (e) {
+                is IOException, is HttpException -> {
+                    val favouriteKey = favouriteKey(mediaType, id)
+                    favouriteDao.getByKey(favouriteKey)?.let { entity ->
+                        MediaDetail(
+                            id = entity.mediaId,
+                            mediaType = mediaType,
+                            title = entity.title,
+                            format = entity.format,
+                            year = entity.year,
+                            score = entity.score,
+                            status = entity.status,
+                            length = entity.length,
+                            synopsis = entity.synopsis,
+                        )
+                    }
+                }
+                else -> throw e
             }
         }
     }

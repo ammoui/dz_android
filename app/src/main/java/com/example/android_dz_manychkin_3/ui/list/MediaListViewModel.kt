@@ -83,6 +83,7 @@ class MediaListViewModel @Inject constructor(
                 )
             } catch (timeout: TimeoutCancellationException) {
                 Log.w("MediaListViewModel", "Load list timeout", timeout)
+                if (requestId != loadRequestId) return@launch
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = "Долго отвечает сервер. Проверьте интернет.",
@@ -91,18 +92,21 @@ class MediaListViewModel @Inject constructor(
                 throw cancellationException
             } catch (http: HttpException) {
                 Log.w("MediaListViewModel", "HTTP error ${http.code()}", http)
+                if (requestId != loadRequestId) return@launch
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = "Ошибка сервера (${http.code()}).",
                 )
             } catch (io: IOException) {
                 Log.w("MediaListViewModel", "Network error", io)
+                if (requestId != loadRequestId) return@launch
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = "Проблема с интернетом. Проверьте соединение.",
                 )
             } catch (exception: Exception) {
                 Log.w("MediaListViewModel", "Unknown error", exception)
+                if (requestId != loadRequestId) return@launch
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = "Ошибка загрузки",

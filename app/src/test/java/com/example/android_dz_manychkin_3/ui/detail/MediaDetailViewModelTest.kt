@@ -8,6 +8,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.just
+import io.mockk.Runs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -31,7 +33,7 @@ class MediaDetailViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        repository = mockk(relaxed = true)
+        repository = mockk()
         savedStateHandle = mockk()
     }
 
@@ -81,6 +83,7 @@ class MediaDetailViewModelTest {
         coEvery { repository.loadMediaDetailOrFavourite(MediaType.ANIME, 1) } returns detail
         // Initially not favourite
         coEvery { repository.observeIsFavourite(MediaType.ANIME, 1) } returns flowOf(false)
+        coEvery { repository.setFavourite(any(), any()) } just Runs
 
         val viewModel = MediaDetailViewModel(savedStateHandle, repository)
         advanceUntilIdle()

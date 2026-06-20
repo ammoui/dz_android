@@ -18,6 +18,7 @@ import org.junit.Before
 import org.junit.Test
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import app.cash.turbine.test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class JikanRepositoryFlowSimpleTest {
@@ -32,7 +33,7 @@ class JikanRepositoryFlowSimpleTest {
         Dispatchers.setMain(testDispatcher)
         api = mockk()
         dao = mockk(relaxed = true)
-        repository = JikanRepository(api, dao)
+        repository = JikanRepository(api, dao, testDispatcher)
     }
 
     @After
@@ -64,10 +65,12 @@ class JikanRepositoryFlowSimpleTest {
         )
         
         favFlow.value = listOf(entity)
-        val result = repository.observeFavourites(MediaType.ANIME).first()
-        
-        assertThat(result).hasSize(1)
-        assertThat(result[0].title).isEqualTo("Test Anime")
+        repository.observeFavourites(MediaType.ANIME).test {
+            val initial = awaitItem()
+            assertThat(initial).hasSize(1)
+            assertThat(initial[0].title).isEqualTo("Test Anime")
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
