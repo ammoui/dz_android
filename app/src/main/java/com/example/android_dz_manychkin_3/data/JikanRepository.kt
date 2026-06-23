@@ -106,7 +106,8 @@ class JikanRepository @Inject constructor(
             }
             response.data.toDetail(mediaType)
         } catch (e: Exception) {
-            when (e) {
+            val cause = if (e is java.lang.reflect.UndeclaredThrowableException) e.cause else e
+            when (cause) {
                 is IOException, is HttpException -> {
                     val favouriteKey = favouriteKey(mediaType, id)
                     favouriteDao.getByKey(favouriteKey)?.let { entity ->

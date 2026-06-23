@@ -15,13 +15,14 @@ import org.junit.Before
 import org.junit.Test
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
-
+import kotlinx.coroutines.test.StandardTestDispatcher
 class FavouriteToggleBehaviorTest {
     
     private lateinit var db: AppDatabase
     private lateinit var dao: com.example.android_dz_manychkin_3.data.local.FavouriteDao
     private lateinit var api: com.example.android_dz_manychkin_3.data.remote.JikanApi
     private lateinit var repository: JikanRepository
+    private val testDispatcher = StandardTestDispatcher()
     
     private val testDetail = MediaDetail(
         id = 1,
@@ -41,7 +42,7 @@ class FavouriteToggleBehaviorTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         dao = db.favouriteDao()
         api = mockk(relaxed = true)
-        repository = JikanRepository(api, dao, kotlinx.coroutines.test.StandardTestDispatcher())
+        repository = JikanRepository(api, dao, testDispatcher)
     }
 
     @After
@@ -50,7 +51,7 @@ class FavouriteToggleBehaviorTest {
     }
 
     @Test
-    fun addingToFavouritesTwiceShouldNotCreateDuplicates() = runTest {
+    fun addingToFavouritesTwiceShouldNotCreateDuplicates() = runTest(testDispatcher) {
         repository.setFavourite(testDetail, true)
         repository.setFavourite(testDetail, true)
         
@@ -61,7 +62,7 @@ class FavouriteToggleBehaviorTest {
     }
 
     @Test
-    fun toggleFavouriteOnThenOffShouldRemoveItem() = runTest {
+    fun toggleFavouriteOnThenOffShouldRemoveItem() = runTest(testDispatcher) {
         repository.setFavourite(testDetail, true)
         assertThat(repository.observeIsFavourite(MediaType.ANIME, 1).first()).isTrue()
         
@@ -71,7 +72,7 @@ class FavouriteToggleBehaviorTest {
     }
 
     @Test
-    fun favouriteToggleSequenceShouldPreserveDataIntegrity() = runTest {
+    fun favouriteToggleSequenceShouldPreserveDataIntegrity() = runTest(testDispatcher) {
         repository.setFavourite(testDetail, true)
         var items = repository.observeFavourites(MediaType.ANIME).first()
         assertThat(items[0].title).isEqualTo("Test Anime")
@@ -86,7 +87,7 @@ class FavouriteToggleBehaviorTest {
     }
 
     @Test
-    fun updatingFavouriteDetailsShouldReflectInRoom() = runTest {
+    fun updatingFavouriteDetailsShouldReflectInRoom() = runTest(testDispatcher) {
         val original = testDetail
         repository.setFavourite(original, true)
         
@@ -101,7 +102,7 @@ class FavouriteToggleBehaviorTest {
     }
 
     @Test
-    fun multipleMediaItemsCanBeFavouritesSimultaneously() = runTest {
+    fun multipleMediaItemsCanBeFavouritesSimultaneously() = runTest(testDispatcher) {
         val detail1 = testDetail
         val detail2 = testDetail.copy(id = 2, title = "Another Anime")
         

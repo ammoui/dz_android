@@ -14,6 +14,7 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -25,6 +26,7 @@ class RepositoryEndToEndTest {
     private lateinit var dao: com.example.android_dz_manychkin_3.data.local.FavouriteDao
     private lateinit var api: JikanApi
     private lateinit var repository: JikanRepository
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setUp() {
@@ -32,7 +34,7 @@ class RepositoryEndToEndTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         dao = db.favouriteDao()
         api = mockk()
-        repository = JikanRepository(api, dao, kotlinx.coroutines.test.StandardTestDispatcher())
+        repository = JikanRepository(api, dao, testDispatcher)
     }
 
     @After
@@ -41,7 +43,7 @@ class RepositoryEndToEndTest {
     }
 
     @Test
-    fun endToEndFlowLoadListAddToFavouritesObserveChanges() = runTest {
+    fun endToEndFlowLoadListAddToFavouritesObserveChanges() = runTest(testDispatcher) {
         val apiResponse = ApiListResponse(
             data = listOf(
                 JikanEntry(mal_id = 1, title = "Anime 1", score = 8.5, year = 2024, type = "TV", episodes = null, chapters = null, volumes = null, status = null, synopsis = null),
@@ -88,7 +90,7 @@ class RepositoryEndToEndTest {
     }
 
     @Test
-    fun offlineDetailLoadingFallsBackToRoomWhenNetworkFails() = runTest {
+    fun offlineDetailLoadingFallsBackToRoomWhenNetworkFails() = runTest(testDispatcher) {
         val detail = MediaDetail(
             id = 1,
             mediaType = MediaType.ANIME,
@@ -105,7 +107,7 @@ class RepositoryEndToEndTest {
         repository.setFavourite(detail, true)
         
         // Now mock API to throw error
-        coEvery { api.getAnimeDetail(any()) } throws RuntimeException("Network error")
+        coEvery { api.getAnimeDetail(any()) } throws java.io.IOException("Network error")
         
         // Should return from Room on fallback
         val result = repository.loadMediaDetailOrFavourite(MediaType.ANIME, 1)
@@ -116,7 +118,7 @@ class RepositoryEndToEndTest {
     }
 
     @Test
-    fun shouldMaintainDataConsistencyAcrossRoomAndFlowUpdates() = runTest {
+    fun shouldMaintainDataConsistencyAcrossRoomAndFlowUpdates() = runTest(testDispatcher) {
         val entity = FavouriteEntity(
             key = "anime-1",
             mediaType = "anime",
